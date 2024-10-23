@@ -119,9 +119,13 @@ class Command(populate_history.Command):
         if not f1:
             return
 
-        batch_count = (len(o_qs) - 1) // batch_size
-        if (len(o_qs) - 1) % batch_size > 0:
-            batch_count += 1
+        if batch_size and batch_size > 0:
+            batch_count = (len(o_qs) - 1) // batch_size
+            if (len(o_qs) - 1) % batch_size > 0:
+                batch_count += 1
+        else:
+            batch_count = 1
+            batch_size = len(o_qs)
 
         for batch_index in range(batch_count):
             with transaction.atomic():
@@ -134,7 +138,7 @@ class Command(populate_history.Command):
                 if extra_one:
                     entries_deleted += self._check_and_delete(f1, extra_one, dry_run)
                     extra_one = None
-            if batch_index != batch_count - 1:
+            if batch_index != batch_count - 1 and batch_sleep > 0:
                 time.sleep(batch_sleep)
 
         self.log(
