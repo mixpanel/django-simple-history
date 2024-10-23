@@ -5,6 +5,7 @@ from ... import models, utils
 from ...exceptions import NotHistoricalModelError
 from . import populate_history
 
+import time
 
 class Command(populate_history.Command):
     args = "<app.model app.model ...>"
@@ -36,6 +37,12 @@ class Command(populate_history.Command):
             nargs="+",
             help="List of fields to be excluded from the diff_against check",
         )
+        parser.add_argument(
+            "--batch-size", type=int, default=None, help="Run the command in batches of batch_size, each of which will be a separate transaction",
+        )
+        parser.add_argument(
+            "--batch-sleep", type=int, default=0, help="Number of seconds to wait in between batches",
+        )
 
     def handle(self, *args, **options):
         self.verbosity = options["verbosity"]
@@ -54,9 +61,9 @@ class Command(populate_history.Command):
         else:
             self.log(self.COMMAND_HINT)
 
-        self._process(to_process, date_back=options["minutes"], dry_run=options["dry"])
+        self._process(to_process, date_back=options["minutes"], dry_run=options["dry"], batch_size=options["batch_size"], batch_sleep=options["batch_sleep"])
 
-    def _process(self, to_process, date_back=None, dry_run=True):
+    def _process(self, to_process, date_back=None, dry_run=True, batch_size=None, batch_sleep=0):
         if date_back:
             stop_date = timezone.now() - timezone.timedelta(minutes=date_back)
         else:
@@ -82,9 +89,9 @@ class Command(populate_history.Command):
                 )
 
             for o in model_query.iterator():
-                self._process_instance(o, model, stop_date=stop_date, dry_run=dry_run)
+                self._process_instance(o, model, stop_date=stop_date, dry_run=dry_run, batch_size=batch_size, batch_sleep=batch_sleep)
 
-    def _process_instance(self, instance, model, stop_date=None, dry_run=True):
+    def _process_instance(self, instance, model, stop_date=None, dry_run=True, batch_size=None, batch_sleep=0):
         entries_deleted = 0
         history = utils.get_history_manager_for_model(instance)
         o_qs = history.all()
@@ -94,17 +101,33 @@ class Command(populate_history.Command):
             o_qs = o_qs.filter(history_date__gte=stop_date)
         else:
             extra_one = None
-        with transaction.atomic():
-            # ordering is ('-history_date', '-history_id') so this is ok
-            f1 = o_qs.first()
-            if not f1:
-                return
+        
+        # ordering is ('-history_date', '-history_id') so this is ok
+        f1 = o_qs.first()
+        if not f1:
+            return
 
-            for f2 in o_qs[1:]:
-                entries_deleted += self._check_and_delete(f1, f2, dry_run)
-                f1 = f2
-            if extra_one:
-                entries_deleted += self._check_and_delete(f1, extra_one, dry_run)
+        if batch_size and batch_size > 0:
+            batch_count = (len(o_qs) - 1) // batch_size
+            if (len(o_qs) - 1) % batch_size > 0:
+                batch_count += 1
+        else:
+            batch_count = 1
+            batch_size = len(o_qs)
+
+        for batch_index in range(batch_count):
+            with transaction.atomic():
+                batch_start = batch_size * batch_index + 1
+                batch_end = min(batch_start + batch_size, len(o_qs))
+                for i in range(batch_start, batch_end):
+                    f2 = o_qs[i]
+                    entries_deleted += self._check_and_delete(f1, f2, dry_run)
+                    f1 = f2
+                if extra_one:
+                    entries_deleted += self._check_and_delete(f1, extra_one, dry_run)
+                    extra_one = None
+            if batch_index != batch_count - 1 and batch_sleep > 0:
+                time.sleep(batch_sleep)
 
         self.log(
             self.DONE_CLEANING_FOR_MODEL.format(model=model, count=entries_deleted)
