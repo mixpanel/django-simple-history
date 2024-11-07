@@ -115,10 +115,20 @@ class Command(populate_history.Command):
             batch_count = 1
             batch_size = len(o_qs)
 
+        self.log(
+            "Starting deletion with {batch_count} batches of {batch_size} records\n".format(batch_count=batch_count, batch_size=batch_size)
+        )
+
         for batch_index in range(batch_count):
             with transaction.atomic():
+                self.log(
+                    "Starting batch {batch_index} of {batch_count} total batches\n".format(batch_index=batch_index, batch_count=batch_count)
+                )
                 batch_start = batch_size * batch_index + 1
                 batch_end = min(batch_start + batch_size, len(o_qs))
+                self.log(
+                    "Batch will run from {batch_start} to {batch_end} of {total} total entries\n".format(batch_start=batch_start, batch_end=batch_end, total=len(o_qs))
+                )
                 for i in range(batch_start, batch_end):
                     f2 = o_qs[i]
                     entries_deleted += self._check_and_delete(f1, f2, dry_run)
@@ -126,7 +136,13 @@ class Command(populate_history.Command):
                 if extra_one:
                     entries_deleted += self._check_and_delete(f1, extra_one, dry_run)
                     extra_one = None
+                self.log(
+                    "Finished batch {batch_index}, and deleted {entries_deleted} records so far\n".format(batch_index=batch_index, entries_deleted=entries_deleted)
+                )
             if batch_index != batch_count - 1 and batch_sleep > 0:
+                self.log(
+                    "Pause after batch {batch_index}, sleeping for {batch_sleep} seconds\n".format(batch_index=batch_index, batch_sleep=batch_sleep)
+                )
                 time.sleep(batch_sleep)
 
         self.log(
