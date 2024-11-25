@@ -131,11 +131,11 @@ class Command(populate_history.Command):
                             "Deleting {to_delete} history records of {model}\n".format(to_delete=len(to_delete_qs), model=model)
                         )
                         to_delete_qs.delete()
-                        if batch_index != batch_count - 1 and batch_sleep > 0:
-                            self.log(
-                                "Pause after batch {batch_index}, sleeping for {batch_sleep} seconds\n".format(batch_index=batch_index, batch_sleep=batch_sleep)
-                            )
-                            time.sleep(batch_sleep)
+                    if batch_index != batch_count - 1 and batch_sleep > 0:
+                        self.log(
+                            "Pause after batch {batch_index}, sleeping for {batch_sleep} seconds\n".format(batch_index=batch_index, batch_sleep=batch_sleep)
+                        )
+                        time.sleep(batch_sleep)
 
                 self.log(
                     "Finished batch deletion for {model}\n".format(model=model)
