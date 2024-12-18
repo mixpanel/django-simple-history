@@ -114,7 +114,7 @@ class Command(populate_history.Command):
                             "Batch will run from {batch_start} to {batch_end} of {total} total entries\n".format(batch_start=batch_start, batch_end=batch_end, total=len(deletion_list))
                         )
                         batch_ids_to_delete = deletion_list[batch_start:batch_end]
-                        to_delete_qs = history_model.objects.filter(pk__in==batch_ids_to_delete)
+                        to_delete_qs = history_model.objects.filter(pk__in=batch_ids_to_delete)
                         self.log(
                             "Deleting {to_delete} history records of {model}\n".format(to_delete=len(to_delete_qs), model=model)
                         )
