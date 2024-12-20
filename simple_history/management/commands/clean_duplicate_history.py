@@ -114,7 +114,7 @@ class Command(populate_history.Command):
                             "Batch will run from {batch_start} to {batch_end} of {total} total entries\n".format(batch_start=batch_start, batch_end=batch_end, total=len(deletion_list))
                         )
                         batch_ids_to_delete = deletion_list[batch_start:batch_end]
-                        to_delete_qs = history_model.objects.filter(id__in=batch_ids_to_delete)
+                        to_delete_qs = history_model.objects.filter(pk__in=batch_ids_to_delete)
                         self.log(
                             "Deleting {to_delete} history records of {model}\n".format(to_delete=len(to_delete_qs), model=model)
                         )
@@ -150,10 +150,6 @@ class Command(populate_history.Command):
                 f1 = f2
             if extra_one:
                 entries_deleted += self._check_and_batch(f1, extra_one, deletion_list)
-
-            self.log(
-                "Gathered {entries_deleted} records of {model} to delete\n".format(entries_deleted=entries_deleted, model=model)
-            )
         else:
             with transaction.atomic():
                 # ordering is ('-history_date', '-history_id') so this is ok
@@ -186,6 +182,6 @@ class Command(populate_history.Command):
     def _check_and_batch(self, entry1, entry2, deletion_list):
         delta = entry1.diff_against(entry2, excluded_fields=self.excluded_fields)
         if not delta.changed_fields:
-            deletion_list.append(entry1.id)
+            deletion_list.append(entry1.pk)
             return 1
         return 0
