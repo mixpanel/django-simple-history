@@ -79,9 +79,11 @@ Authors
 - Jonathan Loo (`alpha1d3d <https://github.com/alpha1d3d>`_)
 - Jonathan Sanchez
 - Jonathan Zvesper (`zvesp <https://github.com/zvesp>`_)
-- Jordon Wing  (`jordonwii <https://github.com/jordonwii`_)
+- Jordan Hyatt (`JordanHyatt <https://github.com/JordanHyatt>`_)
+- Jordon Wing  (`jordonwii <https://github.com/jordonwii>`_)
 - Josh Fyne
 - Josh Thomas (`joshuadavidthomas <https://github.com/joshuadavidthomas>`_)
+- Jurrian Tromp (`jurrian <https://github.com/jurrian>`_)
 - Keith Hackbarth
 - Kevin Foster
 - Kira (`kiraware <https://github.com/kiraware>`_)
@@ -144,6 +146,7 @@ Authors
 - `DanialErfanian <https://github.com/DanialErfanian>`_
 - `Sridhar Marella <https://github.com/sridhar562345>`_
 - `Mattia Fantoni <https://github.com/MattFanto>`_
+- `Trent Holliday <https://github.com/trumpet2012>`_
 
 Background
 ==========
